@@ -22,7 +22,6 @@ import models.cifar as models
 
 from utils import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
 
-
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
     and callable(models.__dict__[name]))
@@ -168,7 +167,9 @@ def main():
     else:
         model = models.__dict__[args.arch](num_classes=num_classes)
 
-    model = torch.nn.DataParallel(model).cuda()
+    # Lucas: don't move to cuda
+    # model = torch.nn.DataParallel(model).cuda()
+    model = torch.nn.DataParallel(model)
     cudnn.benchmark = True
     print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
     criterion = nn.CrossEntropyLoss()
@@ -244,8 +245,9 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
         # measure data loading time
         data_time.update(time.time() - end)
 
-        if use_cuda:
-            inputs, targets = inputs.cuda(), targets.cuda(async=True)
+        # Lucas: commented out for test
+        #if use_cuda:
+        #    inputs, targets = inputs.cuda(), targets.cuda(async=True)
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
@@ -254,9 +256,17 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
-        losses.update(loss.data[0], inputs.size(0))
-        top1.update(prec1[0], inputs.size(0))
-        top5.update(prec5[0], inputs.size(0))
+    
+        # import pdb; pdb.set_trace()
+        
+        # Lucas: fixed error on retrieving just a single loss
+        losses.update(loss.data.item(), inputs.size(0))
+        top1.update(prec1.data.item(), inputs.size(0))
+        top5.update(prec5.data.item(), inputs.size(0))
+
+        # losses.update(loss.data[0], inputs.size(0))
+        # top1.update(prec1[0], inputs.size(0))
+        # top5.update(prec5[0], inputs.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -311,9 +321,15 @@ def test(testloader, model, criterion, epoch, use_cuda):
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
-        losses.update(loss.data[0], inputs.size(0))
-        top1.update(prec1[0], inputs.size(0))
-        top5.update(prec5[0], inputs.size(0))
+
+        losses.update(loss.data.item(), inputs.size(0))
+        top1.update(loss.data.item(), inputs.size(0))
+        top5.update(loss.data.item(), inputs.size(0))
+
+        # Lucas: updates on how to access single item torch tensors
+        # losses.update(loss.data[0], inputs.size(0))
+        # top1.update(prec1[0], inputs.size(0))
+        # top5.update(prec5[0], inputs.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
