@@ -323,8 +323,8 @@ def test(testloader, model, criterion, epoch, use_cuda):
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
 
         losses.update(loss.data.item(), inputs.size(0))
-        top1.update(loss.data.item(), inputs.size(0))
-        top5.update(loss.data.item(), inputs.size(0))
+        top1.update(prec1.data.item(), inputs.size(0))
+        top5.update(prec5.data.item(), inputs.size(0))
 
         # Lucas: updates on how to access single item torch tensors
         # losses.update(loss.data[0], inputs.size(0))
