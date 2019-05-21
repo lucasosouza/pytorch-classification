@@ -168,7 +168,7 @@ def main():
         model = models.__dict__[args.arch](num_classes=num_classes)
 
     # Lucas: don't move to cuda
-    # model = torch.nn.DataParallel(model).cuda()
+    model = torch.nn.DataParallel(model).cuda()
     model = torch.nn.DataParallel(model)
     cudnn.benchmark = True
     print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
@@ -246,8 +246,8 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
         data_time.update(time.time() - end)
 
         # Lucas: commented out for test
-        #if use_cuda:
-        #    inputs, targets = inputs.cuda(), targets.cuda(async=True)
+        if use_cuda:
+           inputs, targets = inputs.cuda(), targets.cuda(async=True)
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
