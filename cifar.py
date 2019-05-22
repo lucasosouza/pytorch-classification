@@ -167,9 +167,12 @@ def main():
     else:
         model = models.__dict__[args.arch](num_classes=num_classes)
 
-    # Lucas: don't move to cuda
-    model = torch.nn.DataParallel(model).cuda()
-    # model = torch.nn.DataParallel(model)
+    # Lucas: check if cuda is available 
+    if use_cuda:
+        model = torch.nn.DataParallel(model).cuda()
+    else:
+        model = torch.nn.DataParallel(model)
+
     cudnn.benchmark = True
     print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
     criterion = nn.CrossEntropyLoss()
@@ -245,9 +248,10 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
         # measure data loading time
         data_time.update(time.time() - end)
 
-        # Lucas: commented out for test
+        # Lucas: async is a keyword in Python 3.7. arg name changed from async to non_blocking in new torch
         if use_cuda:
-           inputs, targets = inputs.cuda(), targets.cuda(async=True)
+           # inputs, targets = inputs.cuda(), targets.cuda(async=True)
+           inputs, targets = inputs.cuda(), targets.cuda(non_blocking=True)
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
